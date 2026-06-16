@@ -3,7 +3,7 @@
   "short_name": "ScanVault",
   "description": "Inventaire personnel par scan de codes-barres",
   "start_url": "/ScanVault/",
-  "scope": "/ScanVault/",
+  "scope": "/scanvault/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
