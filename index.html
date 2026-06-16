@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ScanVault">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <title>ScanVault</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Surcharge du style html5-qrcode pour s'intégrer au design */
+    #qr-reader { width: 100% !important; height: 100% !important; border: none !important; }
+    #qr-reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+    #qr-reader__scan_region { width: 100% !important; height: 100% !important; }
+    #qr-reader__scan_region img { display: none !important; }
+    #qr-reader__dashboard { display: none !important; }
+    #qr-reader__status_span { display: none !important; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── COLLECTION ── -->
+  <div class="view active" id="view-collection">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Ma Collection</div>
+        <div class="topbar-sub" id="collection-count">Chargement…</div>
+      </div>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input class="search-input" id="search-input" type="search" placeholder="Rechercher…" autocomplete="off" autocorrect="off">
+    </div>
+    <div class="scroll-area">
+      <div class="grid" id="collection-grid"></div>
+      <div class="empty-state" id="collection-empty" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ── SCAN ── -->
+  <div class="view" id="view-scan">
+    <div class="scan-container">
+      <!-- html5-qrcode va injecter la vidéo ici -->
+      <div id="qr-reader"></div>
+
+      <!-- Barre de catégories -->
+      <div class="scan-category-bar" id="scan-cat-bar"></div>
+
+      <!-- Cadre visuel décoratif -->
+      <div class="scan-overlay" style="pointer-events:none">
+        <div class="scan-frame">
+          <div class="scan-frame-inner"></div>
+          <div class="scan-line"></div>
+        </div>
+        <div class="scan-hint">Centre le code-barres dans le cadre</div>
+      </div>
+
+      <button class="scan-manual" onclick="openManualEntry()">Saisir manuellement</button>
+
+      <!-- Résultat / loading overlay -->
+      <div class="scan-result" id="scan-result"></div>
+    </div>
+  </div>
+
+  <!-- ── STATS ── -->
+  <div class="view" id="view-stats">
+    <div class="topbar">
+      <div class="topbar-title">Statistiques</div>
+    </div>
+    <div class="scroll-area">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-label">Articles au total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-cats">0</div>
+          <div class="stat-label">Catégories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-vinyl-val">—</div>
+          <div class="stat-label">Valeur vinyles & CD</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-recent">—</div>
+          <div class="stat-label">Dernier ajout</div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">Par catégorie</div>
+      <div class="cat-breakdown" id="cat-breakdown"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB BAR ── -->
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="collection" onclick="switchTab('collection')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      <span class="tab-label">Collection</span>
+    </button>
+    <button class="tab-btn" data-tab="scan" onclick="switchTab('scan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+        <rect x="7" y="7" width="10" height="10" rx="1"/>
+      </svg>
+      <span class="tab-label">Scanner</span>
+    </button>
+    <button class="tab-btn" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M18 20V10M12 20V4M6 20v-6"/>
+      </svg>
+      <span class="tab-label">Statistiques</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal-sheet" id="modal-content"></div>
+</div>
+
+<!-- ── MANUAL BARCODE MODAL ── -->
+<div class="modal-backdrop" id="manual-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-body">
+      <div class="modal-title" style="font-size:20px;margin-bottom:16px">Saisie manuelle</div>
+      <div class="manual-label">Code-barres (EAN-13 ou UPC)</div>
+      <div class="manual-input-row">
+        <input class="manual-input" id="manual-barcode-input" type="number" placeholder="Ex: 9782070360024" inputmode="numeric">
+      </div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-secondary" onclick="closeManualEntry()">Annuler</button>
+        <button class="btn-primary" onclick="submitManualBarcode()">Rechercher</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- Config (clés API — ce fichier est dans .gitignore) -->
+<script src="config.js"></script>
+<!-- App -->
+<script src="app.js"></script>
+</body>
+</html>
